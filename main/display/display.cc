@@ -189,4 +189,5 @@ void Display::SetIcon(const char* icon) {
 }
 
 void Display::SetChatMessage(const std::string &role, const std::string &content) {
+    lv_label_set_text(emotion_label_, content.c_str());
 }

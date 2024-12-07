@@ -18,6 +18,7 @@
 LV_FONT_DECLARE(font_puhui_14_1);
 LV_FONT_DECLARE(font_awesome_30_1);
 LV_FONT_DECLARE(font_awesome_14_1);
+LV_FONT_DECLARE(font_alipuhui20);
 
 static lv_disp_drv_t disp_drv;
 static void st7789_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
@@ -120,7 +121,7 @@ St7789Display::St7789Display(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_h
     InitializeBacklight(backlight_pin);
 
     // draw white
-    std::vector<uint16_t> buffer(width_, 0xFFFF);
+    std::vector<uint16_t> buffer(width_, 0x0000);
     for (int y = 0; y < height_; y++) {
         esp_lcd_panel_draw_bitmap(panel_, 0, y, width_, y + 1, buffer.data());
     }
@@ -269,7 +270,11 @@ void St7789Display::SetupUI() {
     DisplayLockGuard lock(this);
 
     auto screen = lv_disp_get_scr_act(lv_disp_get_default());
-    lv_obj_set_style_text_font(screen, &font_puhui_14_1, 0);
+
+    // 设置屏幕背景颜色为黑色
+    lv_obj_set_style_bg_color(screen, lv_color_black(), 0);
+
+    lv_obj_set_style_text_font(screen, &font_alipuhui20, 0);
     lv_obj_set_style_text_color(screen, lv_color_black(), 0);
 
     /* Container */
@@ -282,8 +287,33 @@ void St7789Display::SetupUI() {
 
     /* Status bar */
     status_bar_ = lv_obj_create(container_);
-    lv_obj_set_size(status_bar_, LV_HOR_RES, 18);
+    lv_obj_set_size(status_bar_, LV_HOR_RES, 18 * 2);
     lv_obj_set_style_radius(status_bar_, 0, 0);
+
+    lv_obj_set_style_bg_color(status_bar_, lv_color_black(), 0);
+    lv_obj_set_style_line_color(status_bar_, lv_color_white(), 0);
+    lv_obj_set_style_outline_color(status_bar_, lv_color_white(), 0);
+    lv_obj_set_style_border_color(status_bar_, lv_color_white(), 0);
+
+    /*
+    设置一组点，用来提供给line组件画线
+    这个数组应该是静态、全局或动态分配的，不能是函数中的局部变量
+    因为lv_line_set_points保存的只是该数组的指针
+    */
+    static lv_point_t line_points[] = {{0, 0}, {320 - 0, 0}};
+
+    lv_obj_t *line = lv_line_create(container_);
+
+    lv_line_set_points(line, line_points, 2); // 设置点数组。line将连接这些点，按顺序画出直线
+    /*创建一个共享样式*/
+    static lv_style_t style_line;
+    lv_style_init(&style_line);
+    // 下面3个样式是 line 的专有样式接口，类似于arc
+    lv_style_set_line_width(&style_line, 1);
+    lv_style_set_line_color(&style_line, lv_palette_main(LV_PALETTE_BLUE));
+    // 使用这个样式能让画出来的线条看起来更平滑
+    lv_style_set_line_rounded(&style_line, true);
+    lv_obj_add_style(line, &style_line, 0);
     
     /* Content */
     content_ = lv_obj_create(container_);
@@ -292,10 +322,17 @@ void St7789Display::SetupUI() {
     lv_obj_set_width(content_, LV_HOR_RES);
     lv_obj_set_flex_grow(content_, 1);
 
+    lv_obj_set_style_bg_color(content_, lv_color_black(), 0);
+    lv_obj_set_style_border_color(content_, lv_color_black(), 0);
+    lv_obj_set_style_outline_color(content_, lv_color_black(), 0);
+    lv_obj_set_style_line_color(content_, lv_color_black(), 0);
+
     emotion_label_ = lv_label_create(content_);
-    lv_obj_set_style_text_font(emotion_label_, &font_awesome_30_1, 0);
-    lv_label_set_text(emotion_label_, FONT_AWESOME_AI_CHIP);
-    lv_obj_center(emotion_label_);
+    lv_obj_set_style_text_font(emotion_label_, &font_alipuhui20, 0); // 使用合适的字体
+    lv_label_set_text(emotion_label_, "");                           // 设置初始文本
+    lv_obj_set_width(emotion_label_, LV_HOR_RES - 20);               // 设置标签宽度，留出边距
+    lv_label_set_long_mode(emotion_label_, LV_LABEL_LONG_WRAP);      // 设置为自动换行模式
+    lv_obj_align(emotion_label_, LV_ALIGN_CENTER, 0, 0);             // 居中对齐
 
     /* Status bar */
     lv_obj_set_flex_flow(status_bar_, LV_FLEX_FLOW_ROW);
@@ -325,4 +362,20 @@ void St7789Display::SetupUI() {
     battery_label_ = lv_label_create(status_bar_);
     lv_label_set_text(battery_label_, "");
     lv_obj_set_style_text_font(battery_label_, &font_awesome_14_1, 0);
+
+    // 设置屏幕文本颜色为白色（如果需要的话，但通常屏幕对象本身不显示文本）
+    // 这里主要为了示例，实际上应该为具体的文本对象设置文本颜色
+    lv_obj_set_style_bg_color(emotion_label_, lv_color_black(), 0);
+    lv_obj_set_style_bg_color(network_label_, lv_color_black(), 0);
+    lv_obj_set_style_bg_color(notification_label_, lv_color_black(), 0);
+    lv_obj_set_style_bg_color(status_label_, lv_color_black(), 0);
+    lv_obj_set_style_bg_color(mute_label_, lv_color_black(), 0);
+    lv_obj_set_style_bg_color(battery_label_, lv_color_black(), 0);
+    // 设置所有标签的字体颜色为白色
+    lv_obj_set_style_text_color(emotion_label_, lv_color_make(0xff, 0x00, 0x00), 0);
+    lv_obj_set_style_text_color(network_label_, lv_color_white(), 0);
+    lv_obj_set_style_text_color(notification_label_, lv_color_make(0x99, 0xff, 0x33), 0);
+    lv_obj_set_style_text_color(status_label_, lv_color_make(0x99, 0xff, 0x33), 0);
+    lv_obj_set_style_text_color(mute_label_, lv_color_white(), 0);
+    lv_obj_set_style_text_color(battery_label_, lv_color_white(), 0);
 }

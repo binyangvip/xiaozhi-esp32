@@ -345,6 +345,7 @@ void Application::Start() {
             auto state = cJSON_GetObjectItem(root, "state");
             if (strcmp(state->valuestring, "start") == 0) {
                 Schedule([this]() {
+                    ESP_LOGI(TAG, "tts.start");
                     aborted_ = false;
                     if (chat_state_ == kChatStateIdle || chat_state_ == kChatStateListening) {
                         SetChatState(kChatStateSpeaking);
@@ -353,7 +354,9 @@ void Application::Start() {
             } else if (strcmp(state->valuestring, "stop") == 0) {
                 Schedule([this]() {
                     if (chat_state_ == kChatStateSpeaking) {
+                        ESP_LOGI(TAG, "tts.stop");
                         background_task_.WaitForCompletion();
+                        ESP_LOGI(TAG, "tts.stop.WaitForCompletion");
                         if (keep_listening_) {
                             protocol_->SendStartListening(kListeningModeAutoStop);
                             SetChatState(kChatStateListening);
@@ -498,6 +501,7 @@ void Application::OutputAudio() {
         }
         
         codec->OutputData(pcm);
+        ESP_LOGI(TAG, "OutputData");
     });
 }
 
@@ -574,8 +578,9 @@ void Application::SetChatState(ChatState state) {
         case kChatStateUnknown:
         case kChatStateIdle:
             builtin_led->TurnOff();
-            display->SetStatus("待命");
-            display->SetEmotion("neutral");
+            display->SetStatus("千机赋能");
+            display->SetChatMessage("user", "请问有什么可以帮你吗？");
+            // display->SetEmotion("neutral");
             Schedule([this](){ this->sendCjsonToSerial("status", "Idle"); });
 #ifdef CONFIG_IDF_TARGET_ESP32S3
             audio_processor_.Stop();
@@ -591,7 +596,7 @@ void Application::SetChatState(ChatState state) {
             builtin_led->SetRed();
             builtin_led->TurnOn();
             display->SetStatus("聆听中...");
-            display->SetEmotion("neutral");
+            // display->SetEmotion("neutral");
             Schedule([this](){ this->sendCjsonToSerial("status", "Listening"); });
             ResetDecoder();
             opus_encoder_->ResetState();
@@ -659,9 +664,9 @@ void Application::sendCjsonToSerial(const char *type, const char *text)
 
     if (json_str != NULL)
     {
-        // 打印日志
-        ESP_LOGI(TAG, "Sent JSON: %s", json_str);
-        printf("\n%s\n", json_str);
+        // // 打印日志
+        // ESP_LOGI(TAG, "Sent JSON: %s", json_str);
+        // printf("\n%s\n", json_str);
 
         // 释放动态分配的内存
         free(json_str);
