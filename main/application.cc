@@ -37,6 +37,9 @@ static const char* const STATE_STRINGS[] = {
 Application::Application() : background_task_(4096 * 8) {
     event_group_ = xEventGroupCreate();
 
+    uc_uart = new UartComm(UART_NUM, TX_PIN, RX_PIN, BAUD_RATE, BUF_SIZE);
+    uc_uart->init();
+
     ota_.SetCheckVersionUrl(CONFIG_OTA_VERSION_URL);
     ota_.SetHeader("Device-Id", SystemInfo::GetMacAddress().c_str());
 }
@@ -231,6 +234,15 @@ void Application::Start() {
         vTaskDelete(NULL);
     }, "check_new_version", 4096 * 2, this, 1, nullptr);
 
+        // 启动串口接收任务
+    xTaskCreate([](void *arg)
+                {
+        Application* app = (Application*)arg;
+        while (true) {
+            app->uc_uart->receiveDataCjson();
+            vTaskDelay(pdMS_TO_TICKS(10));  // 每 ms 检查一次接收的数据
+    } }, "uart_receive_task", 4096, this, 1, nullptr);
+
 #if CONFIG_IDF_TARGET_ESP32S3
     audio_processor_.Initialize(codec->input_channels(), codec->input_reference());
     audio_processor_.OnOutput([this](std::vector<int16_t>&& data) {
@@ -355,6 +367,10 @@ void Application::Start() {
                 if (text != NULL) {
                     ESP_LOGI(TAG, "<< %s", text->valuestring);
                     display->SetChatMessage("assistant", text->valuestring);
+                    uc_string = text->valuestring;
+                    Schedule([this]() {
+                        this->sendCjsonToSerial("tts",uc_string.c_str());
+                    });
                 }
             }
         } else if (strcmp(type->valuestring, "stt") == 0) {
@@ -362,11 +378,19 @@ void Application::Start() {
             if (text != NULL) {
                 ESP_LOGI(TAG, ">> %s", text->valuestring);
                 display->SetChatMessage("user", text->valuestring);
+                uc_string = text->valuestring;
+                Schedule([this]() {
+                    this->sendCjsonToSerial("stt",uc_string.c_str());
+                });
             }
         } else if (strcmp(type->valuestring, "llm") == 0) {
             auto emotion = cJSON_GetObjectItem(root, "emotion");
             if (emotion != NULL) {
                 display->SetEmotion(emotion->valuestring);
+                uc_string = emotion->valuestring;
+                Schedule([this]() {
+                    this->sendCjsonToSerial("emotion",uc_string.c_str());
+                });
             }
         } else if (strcmp(type->valuestring, "iot") == 0) {
             auto commands = cJSON_GetObjectItem(root, "commands");
@@ -552,6 +576,7 @@ void Application::SetChatState(ChatState state) {
             builtin_led->TurnOff();
             display->SetStatus("待命");
             display->SetEmotion("neutral");
+            Schedule([this](){ this->sendCjsonToSerial("status", "Idle"); });
 #ifdef CONFIG_IDF_TARGET_ESP32S3
             audio_processor_.Stop();
 #endif
@@ -560,12 +585,14 @@ void Application::SetChatState(ChatState state) {
             builtin_led->SetBlue();
             builtin_led->TurnOn();
             display->SetStatus("连接中...");
+            Schedule([this](){ this->sendCjsonToSerial("status", "Connecting"); });
             break;
         case kChatStateListening:
             builtin_led->SetRed();
             builtin_led->TurnOn();
             display->SetStatus("聆听中...");
             display->SetEmotion("neutral");
+            Schedule([this](){ this->sendCjsonToSerial("status", "Listening"); });
             ResetDecoder();
             opus_encoder_->ResetState();
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -577,6 +604,7 @@ void Application::SetChatState(ChatState state) {
             builtin_led->SetGreen();
             builtin_led->TurnOn();
             display->SetStatus("说话中...");
+            Schedule([this](){ this->sendCjsonToSerial("status", "Speaking"); });
             ResetDecoder();
 #if CONFIG_IDF_TARGET_ESP32S3
             audio_processor_.Stop();
@@ -613,5 +641,140 @@ void Application::UpdateIotStates() {
     if (states != last_iot_states_) {
         last_iot_states_ = states;
         protocol_->SendIotStates(states);
+    }
+}
+
+void Application::sendCjsonToSerial(const char *type, const char *text)
+{
+    // 创建一个 cJSON 对象
+    cJSON *uc_json = cJSON_CreateObject();
+    cJSON_AddStringToObject(uc_json, "type", type);
+    cJSON_AddStringToObject(uc_json, "text", text);
+
+    // 发送该 cJSON 对象
+    // uc_uart->sendData(uc_json);
+
+    // 将 cJSON 对象转换为字符串
+    char *json_str = cJSON_PrintUnformatted(uc_json); // 不格式化 JSON，节省空间
+
+    if (json_str != NULL)
+    {
+        // 打印日志
+        ESP_LOGI(TAG, "Sent JSON: %s", json_str);
+        printf("\n%s\n", json_str);
+
+        // 释放动态分配的内存
+        free(json_str);
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Failed to convert cJSON to string");
+    }
+
+    // 清理 cJSON 对象
+    cJSON_Delete(uc_json);
+}
+
+void Application::ProcessReceivedJson(cJSON *root)
+{
+    // 获取 JSON 中的 type 字段
+    cJSON *type_item = cJSON_GetObjectItem(root, "type");
+    if (type_item == nullptr)
+    {
+        ESP_LOGE(TAG, "Missing 'type' in received JSON");
+        return;
+    }
+
+    // 根据 type 字段的值进行不同的处理
+    const char *type = type_item->valuestring;
+    if (strcmp(type, "cmd") == 0)
+    {
+        cJSON *text_item = cJSON_GetObjectItem(root, "text");
+        if (text_item != nullptr)
+        {
+            // 判断 text 是否为字符串类型
+            if (cJSON_IsString(text_item))
+            {
+                const char *text = text_item->valuestring;
+                ESP_LOGI(TAG, "Text: %s", text);
+                // 判断 text 是否为 "open"
+                if (strcmp(text, "open") == 0)
+                {
+                    // Application::GetInstance().StartListening();
+                    Schedule([this]()
+                             {
+                                keep_listening_ = true;
+                                if (chat_state_ == kChatStateIdle) {
+                                    if (!protocol_->IsAudioChannelOpened()) {
+                                        SetChatState(kChatStateConnecting);
+                                        if (!protocol_->OpenAudioChannel()) {
+                                            SetChatState(kChatStateIdle);
+                                            ESP_LOGE(TAG, "Failed to open audio channel");
+                                            return;
+                                        }
+                                    }
+                                    protocol_->SendStartListening(kListeningModeAutoStop);
+                                    SetChatState(kChatStateListening);
+                            } });
+                }
+                else if (strcmp(text, "abort") == 0)
+                {
+                    Application::AbortSpeaking(kAbortReasonNone);
+                }
+                else if (strcmp(text, "close") == 0)
+                {
+                    // Application::GetInstance().StopListening();
+                    protocol_->SendStopListening();
+                    SetChatState(kChatStateIdle);
+                }
+                else
+                {
+                    ESP_LOGW(TAG, "Unrecognized command: %s", text);
+                }
+            }
+            // 判断 text 是否为数值类型（整数）
+            else if (cJSON_IsNumber(text_item))
+            {
+            }
+            else
+            {
+                ESP_LOGE(TAG, "Unsupported type for 'text'");
+            }
+        }
+        else
+        {
+            ESP_LOGE(TAG, "Missing 'text' in message");
+        }
+    }
+    else if (strcmp(type, "volume") == 0)
+    {
+        cJSON *text_item = cJSON_GetObjectItem(root, "text");
+        if (text_item != nullptr)
+        {
+            // 判断 text 是否为字符串类型
+            if (cJSON_IsString(text_item))
+            {
+            }
+            // 判断 text 是否为数值类型（整数）
+            else if (cJSON_IsNumber(text_item))
+            {
+                int num = text_item->valueint;
+                auto &board = Board::GetInstance();
+                board.GetAudioCodec()->SetOutputVolume(num);
+                ESP_LOGI(TAG, "Text (Number): %d", num);
+            }
+            else
+            {
+                ESP_LOGE(TAG, "Unsupported type for 'text'");
+            }
+        }
+        else
+        {
+            ESP_LOGE(TAG, "Missing 'text' in message");
+        }
+    }
+    else
+    {
+        ESP_LOGW(TAG, "Unknown JSON type: %s", type);
     }
 }

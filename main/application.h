@@ -17,6 +17,8 @@
 #include "ota.h"
 #include "background_task.h"
 
+#include "uart_comm.h"
+
 #if CONFIG_IDF_TARGET_ESP32S3
 #include "wake_word_detect.h"
 #include "audio_processor.h"
@@ -57,6 +59,8 @@ public:
     void StartListening();
     void StopListening();
     void UpdateIotStates();
+    void sendCjsonToSerial(const char* type, const char* text);
+    void ProcessReceivedJson(cJSON* root);
 
 private:
     Application();
@@ -66,6 +70,8 @@ private:
     WakeWordDetect wake_word_detect_;
     AudioProcessor audio_processor_;
 #endif
+    UartComm* uc_uart;
+    std::string uc_string;
     Ota ota_;
     std::mutex mutex_;
     std::list<std::function<void()>> main_tasks_;

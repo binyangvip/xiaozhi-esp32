@@ -37,6 +37,7 @@ void WebsocketProtocol::SendText(const std::string& text) {
     }
 
     websocket_->Send(text);
+    // ESP_LOGI(TAG, "SendText: %s", text.c_str());
 }
 
 bool WebsocketProtocol::IsAudioChannelOpened() const {
@@ -71,6 +72,14 @@ bool WebsocketProtocol::OpenAudioChannel() {
             // Parse JSON data
             auto root = cJSON_Parse(data);
             auto type = cJSON_GetObjectItem(root, "type");
+            // // 打印格式化后的 JSON 数据
+            // char *json_string = cJSON_Print(root);
+            // if (json_string != nullptr) {
+            //     ESP_LOGI(TAG, "Received JSON: %s", json_string);
+            //     free(json_string);  // 打印后释放内存
+            // } else {
+            //     ESP_LOGE(TAG, "Failed to print JSON.");
+            // }
             if (type != NULL) {
                 if (strcmp(type->valuestring, "hello") == 0) {
                     ParseServerHello(root);

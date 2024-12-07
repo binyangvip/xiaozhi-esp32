@@ -17,6 +17,7 @@ set(SOURCES "audio_codecs/audio_codec.cc"
             "settings.cc"
             "background_task.cc"
             "main.cc"
+            "uart_comm.cc"
             )
 
 set(INCLUDE_DIRS "." "display" "audio_codecs" "protocols" "audio_processing")
