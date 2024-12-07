@@ -72,6 +72,7 @@ bool WebsocketProtocol::OpenAudioChannel() {
             // Parse JSON data
             auto root = cJSON_Parse(data);
             auto type = cJSON_GetObjectItem(root, "type");
+
             // 打印格式化后的 JSON 数据
             char *json_string = cJSON_Print(root);
             if (json_string != nullptr) {
@@ -80,6 +81,7 @@ bool WebsocketProtocol::OpenAudioChannel() {
             } else {
                 ESP_LOGE(TAG, "Failed to print JSON.");
             }
+            
             if (type != NULL) {
                 if (strcmp(type->valuestring, "hello") == 0) {
                     ParseServerHello(root);
