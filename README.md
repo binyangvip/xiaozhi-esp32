@@ -1,3 +1,106 @@
+# 千机赋能 AI 智能体
+
+编译前修改如下内容：
+
+- SDK Configuration editor 
+-- OTA Version URL ：http://47.113.147.78:9502
+-- Connection Type ：Websocket
+-- Websocket URL : ws://115.190.27.83
+-- Board Type : 立创开发板
+
+- 组件 managed_components\78——esp-ml307\web_socket.cc
+-- 93行80改为8082
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # 小智 AI 聊天机器人
 
 这是虾哥的第一个硬件作品。
