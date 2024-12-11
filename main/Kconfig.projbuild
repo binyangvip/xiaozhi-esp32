@@ -3,7 +3,7 @@ menu "Xiaozhi Assistant"
 config OTA_VERSION_URL
     string "OTA Version URL"
     # default "https://api.tenclass.net/xiaozhi/ota/"
-    default "http://47.113.147.78"
+    default "http://47.113.147.78:9502"
     help
         The application will access this URL to check for updates.
 
