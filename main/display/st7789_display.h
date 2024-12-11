@@ -9,9 +9,11 @@
 #include <esp_lcd_panel_io.h>
 #include <esp_lcd_panel_ops.h>
 #include <esp_timer.h>
+#include "esp_lcd_touch_ft5x06.h"
 
 class St7789Display : public Display {
 private:
+    esp_lcd_touch_handle_t tp_ = nullptr;
     esp_lcd_panel_io_handle_t panel_io_ = nullptr;
     esp_lcd_panel_handle_t panel_ = nullptr;
     gpio_num_t backlight_pin_ = GPIO_NUM_NC;
@@ -38,7 +40,7 @@ private:
     virtual void Unlock() override;
 
 public:
-    St7789Display(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_handle_t panel,
+    St7789Display(esp_lcd_touch_handle_t tp,esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_handle_t panel,
                   gpio_num_t backlight_pin, bool backlight_output_invert,
                   int width, int height,  int offset_x, int offset_y, bool mirror_x, bool mirror_y, bool swap_xy);
     ~St7789Display();

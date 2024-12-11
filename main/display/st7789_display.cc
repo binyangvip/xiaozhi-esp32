@@ -105,12 +105,16 @@ void St7789Display::LvglTask() {
         vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
     }
 }
+#include "esp_lvgl_port.h"
+void touch_driver_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
+{
 
+}
 
-St7789Display::St7789Display(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_handle_t panel,
+St7789Display::St7789Display(esp_lcd_touch_handle_t tp,esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_handle_t panel,
                            gpio_num_t backlight_pin, bool backlight_output_invert,
                            int width, int height, int offset_x, int offset_y, bool mirror_x, bool mirror_y, bool swap_xy)
-    : panel_io_(panel_io), panel_(panel), backlight_pin_(backlight_pin), backlight_output_invert_(backlight_output_invert),
+    : tp_(tp) ,panel_io_(panel_io), panel_(panel), backlight_pin_(backlight_pin), backlight_output_invert_(backlight_output_invert),
       mirror_x_(mirror_x), mirror_y_(mirror_y), swap_xy_(swap_xy) {
     width_ = width;
     height_ = height;
@@ -154,6 +158,20 @@ St7789Display::St7789Display(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_h
     disp_drv.user_data = panel_;
 
     lv_disp_drv_register(&disp_drv);
+
+    	/*触摸屏输入接口配置*/
+            /* 添加LVGL接口 */
+    const lvgl_port_touch_cfg_t touch_cfg = {
+        // .disp = disp,
+        .handle = tp,
+    };
+
+    lvgl_port_add_touch(&touch_cfg);
+	// lv_indev_drv_t indev_drv;
+	// lv_indev_drv_init(&indev_drv);
+	// indev_drv.read_cb = touch_driver_read;
+	// indev_drv.type = LV_INDEV_TYPE_POINTER;
+	// lv_indev_drv_register(&indev_drv);
 
     ESP_LOGI(TAG, "Install LVGL tick timer");
     // Tick interface for LVGL (using esp_timer to generate 2ms periodic event)
