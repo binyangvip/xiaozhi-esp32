@@ -123,7 +123,7 @@ private:
         esp_lcd_touch_handle_t *ret_touch = &tp;
             /* Initialize touch */
         esp_lcd_touch_config_t tp_cfg = {
-            .x_max = DISPLAY_WIDTH,
+            .x_max = DISPLAY_WIDTH,//DISPLAY_WIDTH
             .y_max = DISPLAY_HEIGHT,
             .rst_gpio_num = GPIO_NUM_NC, // Shared with LCD reset
             .int_gpio_num = GPIO_NUM_NC, 
@@ -137,10 +137,12 @@ private:
                 .mirror_y = 0,
             },
         };
-        esp_lcd_panel_io_handle_t tp_io_handle = NULL;
+        esp_lcd_panel_io_handle_t tp_io_handle = nullptr;
         esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_FT5x06_CONFIG();
-
-        ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c_v1((esp_lcd_i2c_bus_handle_t)BSP_I2C_NUM, &tp_io_config, &tp_io_handle));
+        tp_io_config.scl_speed_hz = 100000;
+        // ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c_v2(i2c_bus_, &tp_io_config, &tp_io_handle), TAG, "");
+        ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c_v2(i2c_bus_, &tp_io_config, &tp_io_handle));
+        // ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c_v1((esp_lcd_i2c_bus_handle_t)BSP_I2C_NUM, &tp_io_config, &tp_io_handle));
         ESP_ERROR_CHECK(esp_lcd_touch_new_i2c_ft5x06(tp_io_handle, &tp_cfg, ret_touch));
         display_ = new St7789Display(tp,panel_io, panel, DISPLAY_BACKLIGHT_PIN, DISPLAY_BACKLIGHT_OUTPUT_INVERT,
                                     DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_OFFSET_X, DISPLAY_OFFSET_Y, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY);
@@ -165,7 +167,21 @@ public:
         static Led led(GPIO_NUM_NC);
         return &led;
     }
+    void get_touchxy()
+    {
+        uint16_t touchpad_x[1] = {0};
+        uint16_t touchpad_y[1] = {0};
+        uint8_t touchpad_cnt = 0;
+        uint16_t touch_strength[1];
+        /* Read data from touch controller into memory */
+        esp_lcd_touch_read_data(tp);
 
+        /* Read data from touch controller */
+        bool touchpad_pressed = esp_lcd_touch_get_coordinates(tp, touchpad_x, touchpad_y, touch_strength, &touchpad_cnt, 1);
+
+        ESP_LOGI(TAG, "X=%d Y=%d", touchpad_x[0], touchpad_y[0]);
+
+    }
     virtual AudioCodec* GetAudioCodec() override {
         static BoxAudioCodec* audio_codec = nullptr;
         if (audio_codec == nullptr) {
@@ -178,6 +194,7 @@ public:
     }
 
     virtual Display* GetDisplay() override {
+        // get_touchxy();
         return display_;
     }
 };

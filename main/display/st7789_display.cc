@@ -6,13 +6,13 @@
 #include <driver/ledc.h>
 #include <vector>
 
-#define TAG "St7789Display"
+static const char* TAG ="St7789Display";
 #define LCD_LEDC_CH LEDC_CHANNEL_0
 
 #define ST7789_LVGL_TICK_PERIOD_MS 2
 #define ST7789_LVGL_TASK_MAX_DELAY_MS 20
 #define ST7789_LVGL_TASK_MIN_DELAY_MS 1
-#define ST7789_LVGL_TASK_STACK_SIZE (4 * 1024)
+#define ST7789_LVGL_TASK_STACK_SIZE (6 * 1024)
 #define ST7789_LVGL_TASK_PRIORITY 10
 
 LV_FONT_DECLARE(font_puhui_14_1);
@@ -21,6 +21,7 @@ LV_FONT_DECLARE(font_awesome_14_1);
 LV_FONT_DECLARE(font_alipuhui20);
 
 static lv_disp_drv_t disp_drv;
+static lv_indev_drv_t indev_drv;
 static void st7789_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
 {
     esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t)drv->user_data;
@@ -43,7 +44,7 @@ static void st7789_lvgl_port_update_callback(lv_disp_drv_t *drv)
     case LV_DISP_ROT_NONE:
         // Rotate LCD display
         esp_lcd_panel_swap_xy(panel_handle, false);
-        esp_lcd_panel_mirror(panel_handle, true, false);
+        esp_lcd_panel_mirror(panel_handle, false, false);
 #if CONFIG_ST7789_LCD_TOUCH_ENABLED
         // Rotate LCD touch
         esp_lcd_touch_set_mirror_y(tp, false);
@@ -93,7 +94,7 @@ void St7789Display::LvglTask() {
         {
             task_delay_ms = lv_timer_handler();
             Unlock();
-        }
+        }else ESP_LOGI(TAG,"Locking");
         if (task_delay_ms > ST7789_LVGL_TASK_MAX_DELAY_MS)
         {
             task_delay_ms = ST7789_LVGL_TASK_MAX_DELAY_MS;
@@ -105,10 +106,53 @@ void St7789Display::LvglTask() {
         vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
     }
 }
+
 #include "esp_lvgl_port.h"
+#include "esp_lcd_touch_ft5x06.h"
 void touch_driver_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
 {
+//     uint16_t touch_x[1];
+//     uint16_t touch_y[1];
+//     uint16_t touch_strength[1];
+//     uint8_t touch_cnt = 0;
+//     esp_lcd_touch_handle_t tp = (esp_lcd_touch_handle_t)indev_drv->user_data;
+    // ESP_LOGI(TAG, "X=%d Y=%d", data->point.x, data->point.y);
+//     bool touchpad_pressed = esp_lcd_touch_get_coordinates(tp, touch_x, touch_y, touch_strength, &touch_cnt, 1);
+//       if(touchpad_pressed) {
+//     data->point.x = touch_x[0];
+//     data->point.y = touch_y[0];
+//     data->state = LV_INDEV_STATE_PRESSED;
+//     ESP_LOGI(TAG, "X=%d Y=%d", data->point.x, data->point.y);
+//   } else {
+//     data->state = LV_INDEV_STATE_RELEASED;
+//   }
 
+    assert(indev_drv);
+    // lvgl_port_touch_ctx_t *touch_ctx = (lvgl_port_touch_ctx_t *)indev_drv->user_data;
+    esp_lcd_touch_handle_t touch_ctx = (esp_lcd_touch_handle_t)indev_drv->user_data;
+    assert(touch_ctx);
+
+    uint16_t touchpad_x[1] = {0};
+    uint16_t touchpad_y[1] = {0};
+    uint8_t touchpad_cnt = 0;
+    uint16_t touch_strength[1];
+    /* Read data from touch controller into memory */
+    esp_lcd_touch_read_data(touch_ctx);
+
+    /* Read data from touch controller */
+    bool touchpad_pressed = esp_lcd_touch_get_coordinates(touch_ctx, touchpad_x, touchpad_y, touch_strength, &touchpad_cnt, 1);
+
+    if (touchpad_pressed && touchpad_cnt > 0) {
+        data->point.x = touchpad_x[0];
+        data->point.y = touchpad_y[0];
+        data->state = LV_INDEV_STATE_PRESSED;
+        ESP_LOGI(TAG, "X=%d Y=%d", data->point.x, data->point.y);
+    } else {
+        data->state = LV_INDEV_STATE_RELEASED;
+    }
+    
+    data->continue_reading = false;
+    
 }
 
 St7789Display::St7789Display(esp_lcd_touch_handle_t tp,esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_handle_t panel,
@@ -156,23 +200,29 @@ St7789Display::St7789Display(esp_lcd_touch_handle_t tp,esp_lcd_panel_io_handle_t
     disp_drv.drv_update_cb = st7789_lvgl_port_update_callback;
     disp_drv.draw_buf = &disp_buf;
     disp_drv.user_data = panel_;
-
+    // disp_drv.rotated = LV_DISP_ROT_180;
     lv_disp_drv_register(&disp_drv);
 
     	/*触摸屏输入接口配置*/
             /* 添加LVGL接口 */
-    const lvgl_port_touch_cfg_t touch_cfg = {
-        // .disp = disp,
-        .handle = tp,
-    };
+    // const lvgl_port_touch_cfg_t touch_cfg = {
+    //     .disp = disp,
+    //     .handle = tp,
+    // };
 
-    lvgl_port_add_touch(&touch_cfg);
+    // lvgl_port_add_touch(&touch_cfg);
+    ESP_LOGI(TAG, "Register touch driver to LVGL");
 	// lv_indev_drv_t indev_drv;
-	// lv_indev_drv_init(&indev_drv);
-	// indev_drv.read_cb = touch_driver_read;
-	// indev_drv.type = LV_INDEV_TYPE_POINTER;
+	lv_indev_drv_init(&indev_drv);
+	indev_drv.read_cb = touch_driver_read;
+	indev_drv.type = LV_INDEV_TYPE_POINTER;
+    indev_drv.user_data = tp;
 	// lv_indev_drv_register(&indev_drv);
-
+    if (lv_indev_drv_register(&indev_drv) ==NULL )
+    {
+        printf("lv_indev_drv_register failed");
+    }
+    
     ESP_LOGI(TAG, "Install LVGL tick timer");
     // Tick interface for LVGL (using esp_timer to generate 2ms periodic event)
     const esp_timer_create_args_t lvgl_tick_timer_args = {
@@ -283,117 +333,251 @@ bool St7789Display::Lock(int timeout_ms) {
 void St7789Display::Unlock() {
     xSemaphoreGiveRecursive(lvgl_mutex_);
 }
-
-void St7789Display::SetupUI() {
+#include "ui.h"
+void St7789Display::SetStatus(const std::string &status)
+{
+    if (ui_notificationLabel == nullptr) {
+        return;
+    }
     DisplayLockGuard lock(this);
+    lv_label_set_text(ui_notificationLabel, status.c_str());
+}
+void St7789Display::ShowNotification(const std::string &notification, int duration_ms)
+{
+    if (ui_notificationLabel == nullptr) {
+        return;
+    }
+    DisplayLockGuard lock(this);
+    lv_label_set_text(ui_notificationLabel, notification.c_str());
+}
+void St7789Display::SetEmotion(const std::string &emotion)
+{
+}
+void St7789Display::SetChatMessage(const std::string &role, const std::string &content)
+{
+    // std::string user= "user";
+if (strcmp("user", role.c_str()) == 0) {
+        //user
+        lv_textarea_add_text(ui_userTextArea, content.c_str());
+    } else {
+        //assistant
+        lv_textarea_add_text(ui_AITextArea, content.c_str());
+    }
+}
+void St7789Display::SetIcon(const char *icon)
+{
+    // if (emotion_label_ == nullptr) {
+    //     return;
+    // }
+    // DisplayLockGuard lock(this);
+    // lv_label_set_text(emotion_label_, icon);
+}
+// #define ALL_WIFI_ICON ""
+// #define WIFI_ICON_H ""
+// #define WIFI_ICON_M ""
+// #define WIFI_ICON_L ""
+// #define WIFI_ICON_N ""
+// #define ALL_VOLUMN_ICON ""
+// #define VOLUMN_ICON_Y ""
+// #define VOLUMN_ICON_N ""
 
-    auto screen = lv_disp_get_scr_act(lv_disp_get_default());
+const char *wifiIcon[] = {WIFI_ICON_H,WIFI_ICON_M,WIFI_ICON_L,WIFI_ICON_N};
+const char *volumnIcon[] = {VOLUMN_ICON_Y,VOLUMN_ICON_N};
+#include "board.h"
+#include "application.h"
+#include "audio_codec.h"
+void St7789Display::Update()
+{
+    if (ui_volLabel2 == nullptr) {
+        return;
+    }
 
-    // 设置屏幕背景颜色为黑色
-    lv_obj_set_style_bg_color(screen, lv_color_black(), 0);
+    auto& board = Board::GetInstance();
+    auto codec = board.GetAudioCodec();
 
-    lv_obj_set_style_text_font(screen, &font_alipuhui20, 0);
-    lv_obj_set_style_text_color(screen, lv_color_black(), 0);
+    DisplayLockGuard lock(this);
+    // 如果静音状态改变，则更新图标
+    if (codec->output_volume() == 0 && !muted_) {
+        muted_ = true;
+        lv_label_set_text(ui_volLabel2, volumnIcon[1]);
+    } else if (codec->output_volume() > 0 && muted_) {
+        muted_ = false;
+        lv_label_set_text(ui_volLabel2, volumnIcon[0]);
+    }
 
-    /* Container */
-    container_ = lv_obj_create(screen);
-    lv_obj_set_size(container_, LV_HOR_RES, LV_VER_RES);
-    lv_obj_set_flex_flow(container_, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_all(container_, 0, 0);
-    lv_obj_set_style_border_width(container_, 0, 0);
-    lv_obj_set_style_pad_row(container_, 0, 0);
+    // 更新电池图标
+    int battery_level;
+    bool charging;
+    const char* icon = nullptr;
+    if (board.GetBatteryLevel(battery_level, charging)) {
+        if (charging) {
+            icon = FONT_AWESOME_BATTERY_CHARGING;
+        } else {
+            const char* levels[] = {
+                FONT_AWESOME_BATTERY_EMPTY, // 0-19%
+                FONT_AWESOME_BATTERY_1,    // 20-39%
+                FONT_AWESOME_BATTERY_2,    // 40-59%
+                FONT_AWESOME_BATTERY_3,    // 60-79%
+                FONT_AWESOME_BATTERY_FULL, // 80-99%
+                FONT_AWESOME_BATTERY_FULL, // 100%
+            };
+            icon = levels[battery_level / 20];
+        }
+        if (battery_icon_ != icon) {
+            battery_icon_ = icon;
+            // lv_label_set_text(battery_label_, battery_icon_);
+            lv_bar_set_value(ui_changeBar, battery_level, LV_ANIM_OFF);
+        }
+    }
 
-    /* Status bar */
-    status_bar_ = lv_obj_create(container_);
-    lv_obj_set_size(status_bar_, LV_HOR_RES, 18 * 2);
-    lv_obj_set_style_radius(status_bar_, 0, 0);
+    // 仅在聊天状态为空闲时，读取网络状态（避免升级时占用 UART 资源）
+    auto chat_state = Application::GetInstance().GetChatState();
+    if (chat_state == kChatStateIdle || chat_state == kChatStateUnknown) {
+        icon = board.GetNetworkStateIcon();
+        if (network_icon_ != icon) {
+            network_icon_ = icon;
+        int wifi_num = 0;
+        if (strcmp(network_icon_, FONT_AWESOME_WIFI) == 0) {
+            wifi_num = 0;
+            
+        } else if (strcmp(network_icon_, FONT_AWESOME_WIFI_FAIR) == 0) {
+            wifi_num++;
+            
+        } else if (strcmp(network_icon_, FONT_AWESOME_WIFI_WEAK) == 0) {
+            wifi_num++;
+            
+        } else if (strcmp(network_icon_, FONT_AWESOME_WIFI_OFF) == 0) {
+            wifi_num++;
+            
+        }
 
-    lv_obj_set_style_bg_color(status_bar_, lv_color_black(), 0);
-    lv_obj_set_style_line_color(status_bar_, lv_color_white(), 0);
-    lv_obj_set_style_outline_color(status_bar_, lv_color_white(), 0);
-    lv_obj_set_style_border_color(status_bar_, lv_color_white(), 0);
+            lv_label_set_text(ui_netLabel, wifiIcon[wifi_num]);
+        }
+    }
+}
+void St7789Display::SetupUI()
+{
+    DisplayLockGuard lock(this);
+    ui_init();
+            /*unicode设置网络标志特殊字体测试*/
+        lv_label_set_text(ui_netLabel, wifiIcon[3]);
+        lv_label_set_text(ui_volLabel2, volumnIcon[1]);
+        /*设置字体，网络和音量标志已内置*/
+        lv_obj_set_style_text_font(ui_AITextArea, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(ui_userTextArea, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(ui_notificationLabel, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
+        /*设置textarea_text*/
+        // lv_textarea_set_text(ui_AITextArea, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        /*设置textarea_text*/
+        // lv_bar_set_value(ui_changeBar, 12, LV_ANIM_OFF);
+    // _ui_screen_change(&ui_menu, LV_SCR_LOAD_ANIM_FADE_ON, 100, 0, &ui_menu_screen_init);
+    // auto screen = lv_disp_get_scr_act(lv_disp_get_default());
 
-    /*
-    设置一组点，用来提供给line组件画线
-    这个数组应该是静态、全局或动态分配的，不能是函数中的局部变量
-    因为lv_line_set_points保存的只是该数组的指针
-    */
-    static lv_point_t line_points[] = {{0, 0}, {320 - 0, 0}};
+    // // 设置屏幕背景颜色为黑色
+    // lv_obj_set_style_bg_color(screen, lv_color_black(), 0);
 
-    lv_obj_t *line = lv_line_create(container_);
+    // lv_obj_set_style_text_font(screen, &font_alipuhui20, 0);
+    // lv_obj_set_style_text_color(screen, lv_color_black(), 0);
 
-    lv_line_set_points(line, line_points, 2); // 设置点数组。line将连接这些点，按顺序画出直线
-    /*创建一个共享样式*/
-    static lv_style_t style_line;
-    lv_style_init(&style_line);
-    // 下面3个样式是 line 的专有样式接口，类似于arc
-    lv_style_set_line_width(&style_line, 1);
-    lv_style_set_line_color(&style_line, lv_palette_main(LV_PALETTE_BLUE));
-    // 使用这个样式能让画出来的线条看起来更平滑
-    lv_style_set_line_rounded(&style_line, true);
-    lv_obj_add_style(line, &style_line, 0);
+    // /* Container */
+    // container_ = lv_obj_create(screen);
+    // lv_obj_set_size(container_, LV_HOR_RES, LV_VER_RES);
+    // lv_obj_set_flex_flow(container_, LV_FLEX_FLOW_COLUMN);
+    // lv_obj_set_style_pad_all(container_, 0, 0);
+    // lv_obj_set_style_border_width(container_, 0, 0);
+    // lv_obj_set_style_pad_row(container_, 0, 0);
+
+    // /* Status bar */
+    // status_bar_ = lv_obj_create(container_);
+    // lv_obj_set_size(status_bar_, LV_HOR_RES, 18 * 2);
+    // lv_obj_set_style_radius(status_bar_, 0, 0);
+
+    // lv_obj_set_style_bg_color(status_bar_, lv_color_black(), 0);
+    // lv_obj_set_style_line_color(status_bar_, lv_color_white(), 0);
+    // lv_obj_set_style_outline_color(status_bar_, lv_color_white(), 0);
+    // lv_obj_set_style_border_color(status_bar_, lv_color_white(), 0);
+
+    // /*
+    // 设置一组点，用来提供给line组件画线
+    // 这个数组应该是静态、全局或动态分配的，不能是函数中的局部变量
+    // 因为lv_line_set_points保存的只是该数组的指针
+    // */
+    // static lv_point_t line_points[] = {{0, 0}, {320 - 0, 0}};
+
+    // lv_obj_t *line = lv_line_create(container_);
+
+    // lv_line_set_points(line, line_points, 2); // 设置点数组。line将连接这些点，按顺序画出直线
+    // /*创建一个共享样式*/
+    // static lv_style_t style_line;
+    // lv_style_init(&style_line);
+    // // 下面3个样式是 line 的专有样式接口，类似于arc
+    // lv_style_set_line_width(&style_line, 1);
+    // lv_style_set_line_color(&style_line, lv_palette_main(LV_PALETTE_BLUE));
+    // // 使用这个样式能让画出来的线条看起来更平滑
+    // lv_style_set_line_rounded(&style_line, true);
+    // lv_obj_add_style(line, &style_line, 0);
     
-    /* Content */
-    content_ = lv_obj_create(container_);
-    lv_obj_set_scrollbar_mode(content_, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_set_style_radius(content_, 0, 0);
-    lv_obj_set_width(content_, LV_HOR_RES);
-    lv_obj_set_flex_grow(content_, 1);
+    // /* Content */
+    // content_ = lv_obj_create(container_);
+    // lv_obj_set_scrollbar_mode(content_, LV_SCROLLBAR_MODE_OFF);
+    // lv_obj_set_style_radius(content_, 0, 0);
+    // lv_obj_set_width(content_, LV_HOR_RES);
+    // lv_obj_set_flex_grow(content_, 1);
 
-    lv_obj_set_style_bg_color(content_, lv_color_black(), 0);
-    lv_obj_set_style_border_color(content_, lv_color_black(), 0);
-    lv_obj_set_style_outline_color(content_, lv_color_black(), 0);
-    lv_obj_set_style_line_color(content_, lv_color_black(), 0);
+    // lv_obj_set_style_bg_color(content_, lv_color_black(), 0);
+    // lv_obj_set_style_border_color(content_, lv_color_black(), 0);
+    // lv_obj_set_style_outline_color(content_, lv_color_black(), 0);
+    // lv_obj_set_style_line_color(content_, lv_color_black(), 0);
 
-    emotion_label_ = lv_label_create(content_);
-    lv_obj_set_style_text_font(emotion_label_, &font_alipuhui20, 0); // 使用合适的字体
-    lv_label_set_text(emotion_label_, "");                           // 设置初始文本
-    lv_obj_set_width(emotion_label_, LV_HOR_RES - 20);               // 设置标签宽度，留出边距
-    lv_label_set_long_mode(emotion_label_, LV_LABEL_LONG_WRAP);      // 设置为自动换行模式
-    lv_obj_align(emotion_label_, LV_ALIGN_CENTER, 0, 0);             // 居中对齐
+    // emotion_label_ = lv_label_create(content_);
+    // lv_obj_set_style_text_font(emotion_label_, &font_alipuhui20, 0); // 使用合适的字体
+    // lv_label_set_text(emotion_label_, "");                           // 设置初始文本
+    // lv_obj_set_width(emotion_label_, LV_HOR_RES - 20);               // 设置标签宽度，留出边距
+    // lv_label_set_long_mode(emotion_label_, LV_LABEL_LONG_WRAP);      // 设置为自动换行模式
+    // lv_obj_align(emotion_label_, LV_ALIGN_CENTER, 0, 0);             // 居中对齐
 
-    /* Status bar */
-    lv_obj_set_flex_flow(status_bar_, LV_FLEX_FLOW_ROW);
-    lv_obj_set_style_pad_all(status_bar_, 0, 0);
-    lv_obj_set_style_border_width(status_bar_, 0, 0);
-    lv_obj_set_style_pad_column(status_bar_, 0, 0);
+    // /* Status bar */
+    // lv_obj_set_flex_flow(status_bar_, LV_FLEX_FLOW_ROW);
+    // lv_obj_set_style_pad_all(status_bar_, 0, 0);
+    // lv_obj_set_style_border_width(status_bar_, 0, 0);
+    // lv_obj_set_style_pad_column(status_bar_, 0, 0);
 
-    network_label_ = lv_label_create(status_bar_);
-    lv_label_set_text(network_label_, "");
-    lv_obj_set_style_text_font(network_label_, &font_awesome_14_1, 0);
+    // network_label_ = lv_label_create(status_bar_);
+    // lv_label_set_text(network_label_, "");
+    // lv_obj_set_style_text_font(network_label_, &font_awesome_14_1, 0);
 
-    notification_label_ = lv_label_create(status_bar_);
-    lv_obj_set_flex_grow(notification_label_, 1);
-    lv_obj_set_style_text_align(notification_label_, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_text(notification_label_, "通知");
-    lv_obj_add_flag(notification_label_, LV_OBJ_FLAG_HIDDEN);
+    // notification_label_ = lv_label_create(status_bar_);
+    // lv_obj_set_flex_grow(notification_label_, 1);
+    // lv_obj_set_style_text_align(notification_label_, LV_TEXT_ALIGN_CENTER, 0);
+    // lv_label_set_text(notification_label_, "通知");
+    // lv_obj_add_flag(notification_label_, LV_OBJ_FLAG_HIDDEN);
 
-    status_label_ = lv_label_create(status_bar_);
-    lv_obj_set_flex_grow(status_label_, 1);
-    lv_label_set_text(status_label_, "正在初始化");
-    lv_obj_set_style_text_align(status_label_, LV_TEXT_ALIGN_CENTER, 0);
+    // status_label_ = lv_label_create(status_bar_);
+    // lv_obj_set_flex_grow(status_label_, 1);
+    // lv_label_set_text(status_label_, "正在初始化");
+    // lv_obj_set_style_text_align(status_label_, LV_TEXT_ALIGN_CENTER, 0);
 
-    mute_label_ = lv_label_create(status_bar_);
-    lv_label_set_text(mute_label_, "");
-    lv_obj_set_style_text_font(mute_label_, &font_awesome_14_1, 0);
+    // mute_label_ = lv_label_create(status_bar_);
+    // lv_label_set_text(mute_label_, "");
+    // lv_obj_set_style_text_font(mute_label_, &font_awesome_14_1, 0);
 
-    battery_label_ = lv_label_create(status_bar_);
-    lv_label_set_text(battery_label_, "");
-    lv_obj_set_style_text_font(battery_label_, &font_awesome_14_1, 0);
+    // battery_label_ = lv_label_create(status_bar_);
+    // lv_label_set_text(battery_label_, "");
+    // lv_obj_set_style_text_font(battery_label_, &font_awesome_14_1, 0);
 
-    // 设置屏幕文本颜色为白色（如果需要的话，但通常屏幕对象本身不显示文本）
-    // 这里主要为了示例，实际上应该为具体的文本对象设置文本颜色
-    lv_obj_set_style_bg_color(emotion_label_, lv_color_black(), 0);
-    lv_obj_set_style_bg_color(network_label_, lv_color_black(), 0);
-    lv_obj_set_style_bg_color(notification_label_, lv_color_black(), 0);
-    lv_obj_set_style_bg_color(status_label_, lv_color_black(), 0);
-    lv_obj_set_style_bg_color(mute_label_, lv_color_black(), 0);
-    lv_obj_set_style_bg_color(battery_label_, lv_color_black(), 0);
-    // 设置所有标签的字体颜色为白色
-    lv_obj_set_style_text_color(emotion_label_, lv_color_make(0xff, 0x00, 0x00), 0);
-    lv_obj_set_style_text_color(network_label_, lv_color_white(), 0);
-    lv_obj_set_style_text_color(notification_label_, lv_color_make(0x99, 0xff, 0x33), 0);
-    lv_obj_set_style_text_color(status_label_, lv_color_make(0x99, 0xff, 0x33), 0);
-    lv_obj_set_style_text_color(mute_label_, lv_color_white(), 0);
-    lv_obj_set_style_text_color(battery_label_, lv_color_white(), 0);
+    // // 设置屏幕文本颜色为白色（如果需要的话，但通常屏幕对象本身不显示文本）
+    // // 这里主要为了示例，实际上应该为具体的文本对象设置文本颜色
+    // lv_obj_set_style_bg_color(emotion_label_, lv_color_black(), 0);
+    // lv_obj_set_style_bg_color(network_label_, lv_color_black(), 0);
+    // lv_obj_set_style_bg_color(notification_label_, lv_color_black(), 0);
+    // lv_obj_set_style_bg_color(status_label_, lv_color_black(), 0);
+    // lv_obj_set_style_bg_color(mute_label_, lv_color_black(), 0);
+    // lv_obj_set_style_bg_color(battery_label_, lv_color_black(), 0);
+    // // 设置所有标签的字体颜色为白色
+    // lv_obj_set_style_text_color(emotion_label_, lv_color_make(0xff, 0x00, 0x00), 0);
+    // lv_obj_set_style_text_color(network_label_, lv_color_white(), 0);
+    // lv_obj_set_style_text_color(notification_label_, lv_color_make(0x99, 0xff, 0x33), 0);
+    // lv_obj_set_style_text_color(status_label_, lv_color_make(0x99, 0xff, 0x33), 0);
+    // lv_obj_set_style_text_color(mute_label_, lv_color_white(), 0);
+    // lv_obj_set_style_text_color(battery_label_, lv_color_white(), 0);
 }

@@ -49,6 +49,7 @@ public:
     Application(const Application&) = delete;
     Application& operator=(const Application&) = delete;
 
+    void displayTest();
     void Start();
     ChatState GetChatState() const { return chat_state_; }
     void Schedule(std::function<void()> callback);

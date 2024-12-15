@@ -186,7 +186,35 @@ void Application::StopListening() {
         }
     });
 }
+// #include "ui.h"
+// #define ALL_WIFI_ICON ""
+// #define WIFI_ICON_H ""
+// #define WIFI_ICON_M ""
+// #define WIFI_ICON_L ""
+// #define WIFI_ICON_N ""
+// #define ALL_VOLUMN_ICON ""
+// #define VOLUMN_ICON_Y ""
+// #define VOLUMN_ICON_N ""
 
+// const char *wifiIcon[] = {WIFI_ICON_H,WIFI_ICON_M,WIFI_ICON_L,WIFI_ICON_N};
+// const char *volumnIcon[] = {VOLUMN_ICON_Y,VOLUMN_ICON_N};
+void Application::displayTest() {
+        /* Setup the display */
+    auto& board = Board::GetInstance();
+    auto display = board.GetDisplay();
+    // board.get_touchxy();
+    // /*unicode设置网络标志特殊字体测试*/
+    // lv_label_set_text(ui_netLabel, wifiIcon[3]);
+    // lv_label_set_text(ui_volLabel2, volumnIcon[1]);
+    // /*设置字体，网络和音量标志已内置*/
+    // // lv_obj_set_style_text_font(ui_AITextArea, &font_alipuhui20, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // // lv_obj_set_style_text_font(ui_userTextArea, &font_alipuhui20, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // /*设置textarea_text*/
+    // // lv_textarea_set_text(ui_AITextArea, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    // /*设置textarea_text*/
+    // lv_bar_set_value(ui_changeBar, 12, LV_ANIM_OFF);
+
+}
 void Application::Start() {
     auto& board = Board::GetInstance();
     auto builtin_led = board.GetBuiltinLed();

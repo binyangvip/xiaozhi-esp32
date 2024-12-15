@@ -73,5 +73,12 @@
 #define FONT_AWESOME_USER "\xef\x80\x87"
 #define FONT_AWESOME_USER_ROBOT "\xee\x81\x8b"
 #define FONT_AWESOME_DOWNLOAD "\xef\x80\x99"
-
+#define ALL_WIFI_ICON ""
+#define WIFI_ICON_H ""
+#define WIFI_ICON_M ""
+#define WIFI_ICON_L ""
+#define WIFI_ICON_N ""
+#define ALL_VOLUMN_ICON ""
+#define VOLUMN_ICON_Y ""
+#define VOLUMN_ICON_N ""
 #endif

@@ -36,6 +36,13 @@ private:
     void SetupUI();
     void LvglTask();
 
+    virtual void SetStatus(const std::string &status);
+    virtual void ShowNotification(const std::string &notification, int duration_ms = 3000);
+    virtual void SetEmotion(const std::string &emotion);
+    virtual void SetChatMessage(const std::string &role, const std::string &content);
+    virtual void SetIcon(const char* icon);
+    virtual void Update();
+
     virtual bool Lock(int timeout_ms = 0) override;
     virtual void Unlock() override;
 
