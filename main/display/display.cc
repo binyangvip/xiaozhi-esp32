@@ -65,6 +65,10 @@ void Display::SetStatus(const std::string &status) {
     lv_label_set_text(status_label_, status.c_str());
 }
 
+void Display::SetQRcodeLabel(const std::string &status)
+{
+}
+
 void Display::ShowNotification(const std::string &notification, int duration_ms) {
     if (notification_label_ == nullptr) {
         return;
@@ -186,6 +190,14 @@ void Display::SetIcon(const char* icon) {
     }
     DisplayLockGuard lock(this);
     lv_label_set_text(emotion_label_, icon);
+}
+
+void Display::GotoQRcodePage()
+{
+}
+
+void Display::GotoMainPage()
+{
 }
 
 void Display::SetChatMessage(const std::string &role, const std::string &content) {

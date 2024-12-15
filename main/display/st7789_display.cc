@@ -357,12 +357,12 @@ void St7789Display::SetChatMessage(const std::string &role, const std::string &c
 {
     // std::string user= "user";
     DisplayLockGuard lock(this);
-if (strcmp("user", role.c_str()) == 0) {
+    if (strcmp("user", role.c_str()) == 0) {
         //user
-        lv_textarea_add_text(ui_userTextArea, content.c_str());
+        lv_textarea_set_text(ui_userTextArea, content.c_str());
     } else {
         //assistant
-        lv_textarea_add_text(ui_AITextArea, content.c_str());
+        lv_textarea_set_text(ui_AITextArea, content.c_str());
     }
 }
 void St7789Display::SetIcon(const char *icon)
@@ -459,7 +459,7 @@ void St7789Display::Update()
 void St7789Display::SetupUI()
 {
     DisplayLockGuard lock(this);
-    ui_init();
+        ui_init();
             /*unicode设置网络标志特殊字体测试*/
         lv_label_set_text(ui_netLabel, wifiIcon[3]);
         lv_label_set_text(ui_volLabel2, volumnIcon[1]);

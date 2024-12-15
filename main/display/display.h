@@ -13,10 +13,14 @@ public:
     virtual ~Display();
 
     virtual void SetStatus(const std::string &status);
+    virtual void SetQRcodeLabel(const std::string &status);
     virtual void ShowNotification(const std::string &notification, int duration_ms = 3000);
     virtual void SetEmotion(const std::string &emotion);
     virtual void SetChatMessage(const std::string &role, const std::string &content);
     virtual void SetIcon(const char* icon);
+
+    virtual void GotoQRcodePage();
+    virtual void GotoMainPage();
 
     int width() const { return width_; }
     int height() const { return height_; }
