@@ -37,7 +37,8 @@ extern lv_obj_t * ui_userTextArea;
 // SCREEN: ui_QRcode
 void ui_QRcode_screen_init(void);
 extern lv_obj_t * ui_QRcode;
-extern lv_obj_t * ui_Image2;
+extern lv_obj_t * ui_QRcodeImg;
+extern lv_obj_t * ui_QRcodeLabel;
 // CUSTOM VARIABLES
 
 // SCREEN: ui_menu

@@ -53,8 +53,10 @@ void ui_main_screen_init(void)
     lv_obj_set_style_bg_grad_dir(ui_changeBar, LV_GRAD_DIR_HOR, LV_PART_INDICATOR | LV_STATE_DEFAULT);
 
     ui_notificationLabel = lv_label_create(ui_status);
-    lv_obj_set_width(ui_notificationLabel, 90);
+    lv_obj_set_width(ui_notificationLabel, 136);
     lv_obj_set_height(ui_notificationLabel, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_notificationLabel, -18);
+    lv_obj_set_y(ui_notificationLabel, 0);
     lv_obj_set_align(ui_notificationLabel, LV_ALIGN_CENTER);
     lv_label_set_long_mode(ui_notificationLabel, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_label_set_text(ui_notificationLabel, "notify");

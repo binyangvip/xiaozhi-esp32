@@ -10,15 +10,23 @@ void ui_QRcode_screen_init(void)
     ui_QRcode = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_QRcode, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
-    ui_Image2 = lv_img_create(ui_QRcode);
-    lv_img_set_src(ui_Image2, &ui_img_download_png);
-    lv_obj_set_width(ui_Image2, LV_SIZE_CONTENT);   /// 240
-    lv_obj_set_height(ui_Image2, LV_SIZE_CONTENT);    /// 240
-    lv_obj_set_x(ui_Image2, 0);
-    lv_obj_set_y(ui_Image2, 35);
-    lv_obj_set_align(ui_Image2, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_Image2, LV_OBJ_FLAG_ADV_HITTEST);     /// Flags
-    lv_obj_clear_flag(ui_Image2, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    ui_QRcodeImg = lv_img_create(ui_QRcode);
+    lv_img_set_src(ui_QRcodeImg, &ui_img_download_png);
+    lv_obj_set_width(ui_QRcodeImg, 240);
+    lv_obj_set_height(ui_QRcodeImg, 240);
+    lv_obj_set_x(ui_QRcodeImg, 0);
+    lv_obj_set_y(ui_QRcodeImg, 40);
+    lv_obj_set_align(ui_QRcodeImg, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(ui_QRcodeImg, LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_GESTURE_BUBBLE |
+                      LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE);     /// Flags
+
+    ui_QRcodeLabel = lv_label_create(ui_QRcode);
+    lv_obj_set_width(ui_QRcodeLabel, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_QRcodeLabel, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_QRcodeLabel, 0);
+    lv_obj_set_y(ui_QRcodeLabel, 30);
+    lv_obj_set_align(ui_QRcodeLabel, LV_ALIGN_TOP_MID);
+    lv_label_set_text(ui_QRcodeLabel, "请使用手机扫描下方二维码进入配网页面");
 
 
 }

@@ -31,7 +31,8 @@ lv_obj_t * ui_userTextArea;
 // SCREEN: ui_QRcode
 void ui_QRcode_screen_init(void);
 lv_obj_t * ui_QRcode;
-lv_obj_t * ui_Image2;
+lv_obj_t * ui_QRcodeImg;
+lv_obj_t * ui_QRcodeLabel;
 // CUSTOM VARIABLES
 
 
