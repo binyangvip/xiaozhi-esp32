@@ -356,6 +356,7 @@ void St7789Display::SetEmotion(const std::string &emotion)
 void St7789Display::SetChatMessage(const std::string &role, const std::string &content)
 {
     // std::string user= "user";
+    DisplayLockGuard lock(this);
 if (strcmp("user", role.c_str()) == 0) {
         //user
         lv_textarea_add_text(ui_userTextArea, content.c_str());
