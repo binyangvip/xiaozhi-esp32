@@ -43,6 +43,9 @@ private:
     virtual void SetIcon(const char* icon);
     virtual void Update();
 
+    virtual void GotoQRcodePage();
+    virtual void GotoMainPage();
+
     virtual bool Lock(int timeout_ms = 0) override;
     virtual void Unlock() override;
 

@@ -21,8 +21,8 @@ void ui_QRcode_screen_init(void)
                       LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE);     /// Flags
 
     ui_QRcodeLabel = lv_label_create(ui_QRcode);
-    lv_obj_set_width(ui_QRcodeLabel, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_QRcodeLabel, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_width(ui_QRcodeLabel, 150);
+    lv_obj_set_height(ui_QRcodeLabel, LV_SIZE_CONTENT);    /// 20
     lv_obj_set_x(ui_QRcodeLabel, 0);
     lv_obj_set_y(ui_QRcodeLabel, 30);
     lv_obj_set_align(ui_QRcodeLabel, LV_ALIGN_TOP_MID);

@@ -61,7 +61,7 @@ void WifiBoard::StartNetwork() {
         hint += wifi_ap.GetWebServerUrl();
 
         display->SetStatus(hint);
-        
+        display->GotoQRcodePage();
         // Wait forever until reset after configuration
         while (true) {
             int free_sram = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);

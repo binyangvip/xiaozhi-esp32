@@ -4,10 +4,15 @@
 // Project name: SquareLine_test1
 
 #include "ui.h"
-
+// #include "board.h"
+// #include "application.h"
+// #include "audio_codec.h"
 void ChangeVolumn(lv_event_t * e)
 {
 	// Your code here
+	// auto &board = Board::GetInstance();
+	// board.GetAudioCodec()->SetOutputVolume((int)lv_slider_get_value(ui_volumn));
+	// (int)lv_slider_get_value(ui_volumn);
 }
 
 void ClickeWake(lv_event_t * e)

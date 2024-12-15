@@ -456,6 +456,14 @@ void St7789Display::Update()
         }
     }
 }
+void St7789Display::GotoQRcodePage()
+{
+    _ui_screen_change(&ui_QRcode, LV_SCR_LOAD_ANIM_FADE_ON, 100, 0, &ui_QRcode_screen_init);
+}   
+void St7789Display::GotoMainPage()
+{
+    _ui_screen_change(&ui_menu, LV_SCR_LOAD_ANIM_FADE_ON, 100, 0, &ui_menu_screen_init);
+}
 void St7789Display::SetupUI()
 {
     DisplayLockGuard lock(this);
@@ -467,6 +475,7 @@ void St7789Display::SetupUI()
         lv_obj_set_style_text_font(ui_AITextArea, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_font(ui_userTextArea, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_font(ui_notificationLabel, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(ui_QRcodeLabel, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
         /*设置textarea_text*/
         // lv_textarea_set_text(ui_AITextArea, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         /*设置textarea_text*/
