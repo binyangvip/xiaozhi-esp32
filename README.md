@@ -11,6 +11,16 @@
 - 组件 managed_components\78——esp-ml307\web_socket.cc
 -- 93行80改为8082
 
+# squareline UI
+-configuration `CODEC_I2C_BACKWARD_COMPATIBLE` in Kconfig to allow use of the old I2C driver.
+-- Default is set to `y` for backward compatibility. To use the new I2C driver, set it to `n` instead.
+-- y——> old iic ,N——>new iic
+-- 因为iic影响 SDK Configuration editor CODEC_I2C_BACKWARD_COMPATIBLE 取消选中
+- 要使用开机动画
+-- 3rd Party Libraries：GIF decoder library 需要打钩
+- uiGui
+-- 此文件夹并未被编译进工程之中，里面是常用API
+
 
 
 
