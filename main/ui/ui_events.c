@@ -10,6 +10,7 @@
 void ChangeVolumn(lv_event_t * e)
 {
 	// Your code here
+	ChangeVolumn_cc((int)lv_slider_get_value(ui_volumn));
 	// auto &board = Board::GetInstance();
 	// board.GetAudioCodec()->SetOutputVolume((int)lv_slider_get_value(ui_volumn));
 	// (int)lv_slider_get_value(ui_volumn);
@@ -28,4 +29,17 @@ void ClickeDelNetSet(lv_event_t * e)
 void checkBatColor(lv_event_t * e)
 {
 	// Your code here
+	int changebar = lv_bar_get_value(ui_changeBar);
+	if (changebar>60)
+	{
+		/* code */
+		//green
+		lv_obj_set_style_bg_color(ui_changeBar, lv_color_hex(0x02F705), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+		lv_obj_set_style_bg_grad_color(ui_changeBar, lv_color_hex(0x02F705), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+	}else{
+		//red
+		lv_obj_set_style_bg_color(ui_changeBar, lv_color_hex(0xF7021E), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    	lv_obj_set_style_bg_grad_color(ui_changeBar, lv_color_hex(0xF7021E), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+
+	}
 }

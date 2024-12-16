@@ -703,7 +703,14 @@ void Application::sendCjsonToSerial(const char *type, const char *text)
     // 清理 cJSON 对象
     cJSON_Delete(uc_json);
 }
-
+#include "ui_events.h"
+extern "C" void ChangeVolumn_cc(int volum)
+{
+	// Your code here
+	auto &board = Board::GetInstance();
+	board.GetAudioCodec()->SetOutputVolume(volum);
+	// (int)lv_slider_get_value(ui_volumn);
+}
 void Application::ProcessReceivedJson(cJSON *root)
 {
     // 获取 JSON 中的 type 字段

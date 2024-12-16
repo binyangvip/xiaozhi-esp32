@@ -15,6 +15,7 @@ void ChangeVolumn(lv_event_t * e);
 void ClickeWake(lv_event_t * e);
 void ClickeDelNetSet(lv_event_t * e);
 
+void ChangeVolumn_cc(int volum);
 #ifdef __cplusplus
 } /*extern "C"*/
 #endif
