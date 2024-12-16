@@ -12,14 +12,20 @@
 -- 93行80改为8082
 
 # squareline UI
--configuration `CODEC_I2C_BACKWARD_COMPATIBLE` in Kconfig to allow use of the old I2C driver.
+- CODEC_I2C_BACKWARD_COMPATIBLE
+-- configuration `CODEC_I2C_BACKWARD_COMPATIBLE` in Kconfig to allow use of the old I2C driver.
 -- Default is set to `y` for backward compatibility. To use the new I2C driver, set it to `n` instead.
 -- y——> old iic ,N——>new iic
 -- 因为iic影响 SDK Configuration editor CODEC_I2C_BACKWARD_COMPATIBLE 取消选中
 - 要使用开机动画
 -- 3rd Party Libraries：GIF decoder library 需要打钩
+-- GIF decoder library 打钩会产生#define CONFIG_LV_USE_GIF 1 在"sdkconfig.h"中
+-- display.h #define IsGifSwitch CONFIG_LV_USE_GIF
+-- IsGifSwitch该宏定义会在setupUi函数和Application类的KaijiGifStart()函数中生效
+决定是否执行开机动画
 - uiGui
 -- 此文件夹并未被编译进工程之中，里面是常用API
+
 
 
 

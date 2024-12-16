@@ -333,6 +333,10 @@ bool St7789Display::Lock(int timeout_ms) {
 void St7789Display::Unlock() {
     xSemaphoreGiveRecursive(lvgl_mutex_);
 }
+bool St7789Display::kaijiFinishFlag()
+{
+    return kaijiGif_finish_flag;
+}
 #include "ui.h"
 void St7789Display::SetStatus(const std::string &status)
 {
@@ -464,11 +468,19 @@ void St7789Display::GotoMainPage()
 {
     _ui_screen_change(&ui_menu, LV_SCR_LOAD_ANIM_FADE_ON, 100, 0, &ui_menu_screen_init);
 }
-void St7789Display::SetupUI()
+static bool *flag;
+void next_frame_task_cb(lv_event_t *event)
 {
-    DisplayLockGuard lock(this);
+    lv_event_code_t code = lv_event_get_code(event);
+    switch (code)
+    {
+    case LV_EVENT_READY:
+    {
+        printf("----gif play finsh----\n");
+
+        // UiGui::GetInstance.Init();
         ui_init();
-            /*unicode设置网络标志特殊字体测试*/
+        /*unicode设置网络标志特殊字体测试*/
         lv_label_set_text(ui_netLabel, wifiIcon[3]);
         lv_label_set_text(ui_volLabel2, volumnIcon[1]);
         /*设置字体，网络和音量标志已内置*/
@@ -476,6 +488,50 @@ void St7789Display::SetupUI()
         lv_obj_set_style_text_font(ui_userTextArea, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_font(ui_notificationLabel, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_font(ui_QRcodeLabel, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
+        *flag = true;
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void St7789Display::SetupUI()
+{
+    DisplayLockGuard lock(this);
+    #if IsGifSwitch
+    flag = &kaijiGif_finish_flag;
+    // GifSwitch = true;
+    static lv_obj_t *gif_anim = NULL;    
+    //kaiji_gif
+    LV_IMG_DECLARE(kaiji_gif);
+    // lv_obj_t *img;
+    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_black(), 0);
+    gif_anim = lv_gif_create(lv_scr_act());
+
+        /* add event to gif_anim */
+    lv_obj_add_event_cb(gif_anim, next_frame_task_cb, LV_EVENT_ALL, NULL);
+
+    lv_gif_set_src(gif_anim, &kaiji_gif);
+    lv_obj_set_pos(gif_anim, 0, 0);
+    vTaskDelay(pdMS_TO_TICKS(10));
+    if (gif_anim == NULL) {
+    // 处理错误，例如打印错误消息或退出程序
+    printf( "gif_anim is NULL\n");
+    
+    }
+    ((lv_gif_t *)gif_anim)->gif->loop_count = 1;
+    #else
+        ui_init();
+        /*unicode设置网络标志特殊字体测试*/
+        lv_label_set_text(ui_netLabel, wifiIcon[3]);
+        lv_label_set_text(ui_volLabel2, volumnIcon[1]);
+        /*设置字体，网络和音量标志已内置*/
+        lv_obj_set_style_text_font(ui_AITextArea, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(ui_userTextArea, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(ui_notificationLabel, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(ui_QRcodeLabel, &font_puhui_14_1, LV_PART_MAIN | LV_STATE_DEFAULT);
+    #endif
         /*设置textarea_text*/
         // lv_textarea_set_text(ui_AITextArea, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         /*设置textarea_text*/

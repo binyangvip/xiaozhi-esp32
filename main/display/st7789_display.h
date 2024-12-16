@@ -13,6 +13,7 @@
 
 class St7789Display : public Display {
 private:
+    // bool GifSwitch = false;
     esp_lcd_touch_handle_t tp_ = nullptr;
     esp_lcd_panel_io_handle_t panel_io_ = nullptr;
     esp_lcd_panel_handle_t panel_ = nullptr;
@@ -49,11 +50,15 @@ private:
     virtual bool Lock(int timeout_ms = 0) override;
     virtual void Unlock() override;
 
+    
 public:
     St7789Display(esp_lcd_touch_handle_t tp,esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_handle_t panel,
                   gpio_num_t backlight_pin, bool backlight_output_invert,
                   int width, int height,  int offset_x, int offset_y, bool mirror_x, bool mirror_y, bool swap_xy);
     ~St7789Display();
+    bool kaijiGif_finish_flag = false;
+    
+    virtual bool kaijiFinishFlag();
 };
 
 #endif // ST7789_DISPLAY_H

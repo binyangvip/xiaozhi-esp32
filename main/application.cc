@@ -215,7 +215,25 @@ void Application::displayTest() {
     // lv_bar_set_value(ui_changeBar, 12, LV_ANIM_OFF);
 
 }
-void Application::Start() {
+
+void Application::KaijiGifStart()
+{
+    #if IsGifSwitch
+    this->displayTest();
+    auto& board = Board::GetInstance();
+    auto display = board.GetDisplay();
+    while (display->kaijiFinishFlag() == false)
+    {
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+    #endif
+    this->Start();
+  
+
+
+}
+void Application::Start()
+{
     auto& board = Board::GetInstance();
     auto builtin_led = board.GetBuiltinLed();
     builtin_led->SetBlue();

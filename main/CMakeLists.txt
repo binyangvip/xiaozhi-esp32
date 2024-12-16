@@ -18,6 +18,7 @@ set(SOURCES "audio_codecs/audio_codec.cc"
             "background_task.cc"
             "main.cc"
             "uart_comm.cc"
+            "kaiji_gif.c"
             )
 
 set(INCLUDE_DIRS "." "display" "audio_codecs" "protocols" "audio_processing")

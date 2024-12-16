@@ -5,7 +5,7 @@
 #include <esp_timer.h>
 
 #include <string>
-
+#define IsGifSwitch CONFIG_LV_USE_GIF
 
 class Display {
 public:
@@ -21,6 +21,8 @@ public:
 
     virtual void GotoQRcodePage();
     virtual void GotoMainPage();
+
+    virtual bool kaijiFinishFlag();
 
     int width() const { return width_; }
     int height() const { return height_; }

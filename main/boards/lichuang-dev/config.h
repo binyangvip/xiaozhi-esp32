@@ -39,4 +39,5 @@
 #define DISPLAY_BACKLIGHT_OUTPUT_INVERT true
 
 #define BSP_I2C_NUM           (1)            // I2C外设
+
 #endif // _BOARD_CONFIG_H_

@@ -200,6 +200,11 @@ void Display::GotoMainPage()
 {
 }
 
+bool Display::kaijiFinishFlag()
+{
+    return false;
+}
+
 void Display::SetChatMessage(const std::string &role, const std::string &content) {
     lv_label_set_text(emotion_label_, content.c_str());
 }
